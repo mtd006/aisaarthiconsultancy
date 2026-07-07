@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Dashboard</title>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+  body{background:#f1f5f9;color:#1e293b;}
+  .topbar{background:#1e293b;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;}
+  .topbar a{color:#cbd5e1;text-decoration:none;font-size:0.85rem;margin-left:12px;}
+  .layout{display:flex;min-height:calc(100vh - 54px);}
+  .sidebar{width:200px;background:#fff;border-right:1px solid #e2e8f0;padding:14px 0;overflow-y:auto;}
+  .sidebar button{display:block;width:100%;text-align:left;padding:10px 20px;background:none;border:none;font-size:0.85rem;cursor:pointer;color:#334155;}
+  .sidebar button.active, .sidebar button:hover{background:#eef2ff;color:#4f46e5;font-weight:600;}
+  .content{flex:1;padding:24px;overflow-x:auto;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px;}
+  .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+  .card .num{font-size:1.5rem;font-weight:700;} .card .lbl{font-size:0.78rem;color:#64748b;}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;font-size:0.85rem;}
+  th{background:#1e293b;color:#fff;padding:10px;text-align:left;} td{padding:10px;border-bottom:1px solid #eef2f7;}
+  .panel{display:none;} .panel.active{display:block;}
+  .panel h2{margin-bottom:14px;font-size:1.15rem;}
+  .btn{padding:6px 12px;border:none;border-radius:5px;background:#6366f1;color:#fff;font-size:0.78rem;cursor:pointer;}
+  form.inline{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;background:#fff;padding:14px;border-radius:8px;}
+  form.inline input, form.inline select, form.inline textarea{padding:7px;border:1px solid #cbd5e1;border-radius:5px;font-size:0.82rem;}
+  .prodcard{background:#fff;border-radius:10px;padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>Client Dashboard &bull; <%= user.fullName %></div>
+  <div><a href="/">Storefront</a><a href="/logout">Logout</a></div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <button data-p="overview" class="active">Overview</button>
+    <button data-p="services">Browse Services</button>
+    <button data-p="purchases">My Purchases</button>
+    <button data-p="subscriptions">Subscriptions</button>
+    <button data-p="invoices">Invoices</button>
+    <button data-p="progress">Project Progress</button>
+    <button data-p="meetings">Meetings</button>
+    <button data-p="tickets">Support Tickets</button>
+    <button data-p="maturity">AI Maturity Assessment</button>
+    <button data-p="roi">ROI Calculator</button>
+    <button data-p="notifications">Notifications</button>
+    <button data-p="profile">Profile</button>
+  </div>
+  <div class="content">
+
+    <div class="panel active" id="p-overview"><h2>Overview</h2><div class="cards" id="statCards"></div></div>
+
+    <div class="panel" id="p-services"><h2>Browse Services</h2><div id="serviceList"></div></div>
+
+    <div class="panel" id="p-purchases">
+      <h2>My Purchases</h2>
+      <table id="purchasesTable"><thead><tr><th>Service</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-subscriptions">
+      <h2>Subscriptions</h2>
+      <table id="subsTable"><thead><tr><th>Service</th><th>Start</th><th>End</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-invoices">
+      <h2>Invoices</h2>
+      <table id="invoicesTable"><thead><tr><th>Invoice #</th><th>Service</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-progress">
+      <h2>Project Progress</h2>
+      <table id="progressTable"><thead><tr><th>Project</th><th>Stage</th><th>%</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-meetings">
+      <h2>Meetings</h2>
+      <table id="meetingsTable"><thead><tr><th>Title</th><th>Date</th><th>Link</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-tickets">
+      <h2>Support Tickets</h2>
+      <form class="inline" id="ticketForm">
+        <input name="subject" placeholder="Subject" required>
+        <textarea name="description" placeholder="Describe the issue" required></textarea>
+        <button class="btn" type="submit">Submit Ticket</button>
+      </form>
+      <table id="ticketsTable"><thead><tr><th>Subject</th><th>Status</th><th>Resolution</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-maturity">
+      <h2>AI Maturity Assessment</h2>
+      <form class="inline" id="maturityForm" style="display:block;"></form>
+      <div id="maturityResult"></div>
+    </div>
+
+    <div class="panel" id="p-roi">
+      <h2>AI ROI Calculator</h2>
+      <form class="inline" id="roiForm">
+        <input name="currentCost" type="number" placeholder="Current annual process cost">
+        <input name="hoursSpentWeekly" type="number" placeholder="Hours spent weekly">
+        <input name="hourlyRate" type="number" placeholder="Hourly rate">
+        <input name="expectedEfficiencyGainPct" type="number" placeholder="Expected efficiency gain %">
+        <input name="implementationCost" type="number" placeholder="Implementation cost">
+        <button class="btn" type="submit">Calculate ROI</button>
+      </form>
+      <div id="roiResult"></div>
+    </div>
+
+    <div class="panel" id="p-notifications">
+      <h2>Notifications</h2>
+      <table id="notifTable"><thead><tr><th>Title</th><th>Message</th><th>Time</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-profile">
+      <h2>Profile</h2>
+      <form class="inline" id="profileForm" style="display:block;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label>Company Name</label><input name="companyName"></div>
+          <div><label>Full Name</label><input name="fullName"></div>
+          <div><label>Phone</label><input name="phone"></div>
+          <div><label>Website</label><input name="website"></div>
+        </div>
+        <button class="btn" type="submit" style="margin-top:10px;">Save Profile</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+
+$$('.sidebar button').forEach(btn => btn.addEventListener('click', () => {
+  $$('.sidebar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  $$('.panel').forEach(p=>p.classList.remove('active'));
+  $('#p-'+btn.dataset.p).classList.add('active');
+  loadPanel(btn.dataset.p);
+}));
+
+async function api(url, opts={}) {
+  const res = await fetch(url, { headers: {'Content-Type':'application/json'}, ...opts });
+  return res.json();
+}
+
+function loadPanel(name) {
+  ({overview:loadOverview, services:loadServices, purchases:loadPurchases, subscriptions:loadSubs,
+    invoices:loadInvoices, progress:loadProgress, meetings:loadMeetings, tickets:loadTickets,
+    maturity:loadMaturity, roi:()=>{}, notifications:loadNotifications, profile:loadProfile}[name] || (()=>{}))();
+}
+
+async function loadOverview() {
+  const { stats } = await api('/api/client/stats');
+  $('#statCards').innerHTML = `
+    <div class="card"><div class="num">${stats.purchases}</div><div class="lbl">Purchases</div></div>
+    <div class="card"><div class="num">${stats.subs}</div><div class="lbl">Active Subscriptions</div></div>
+    <div class="card"><div class="num">${stats.tickets}</div><div class="lbl">Support Tickets</div></div>
+    <div class="card"><div class="num">${stats.unread}</div><div class="lbl">Unread Notifications</div></div>`;
+}
+
+async function loadServices() {
+  const { products } = await api('/api/client/products');
+  $('#serviceList').innerHTML = products.map(p => `
+    <div class="prodcard">
+      <div><strong>${p.name}</strong><br><small>${p.category||''} &bull; â‚¹${p.priceOneTime||p.mrp}</small></div>
+      <div>
+        <button class="btn" onclick="buyRazorpay('${p.code}')">Pay Online (Razorpay)</button>
+        <button class="btn" style="background:#94a3b8" onclick="payManual('${p.code}')">Manual / Bank Transfer</button>
+      </div>
+    </div>`).join('') || '<p>No services available yet.</p>';
+}
+
+async function buyRazorpay(productCode) {
+  const order = await api('/api/create-order', { method:'POST', body: JSON.stringify({ productCode, purchaseType:'One-time' }) });
+  if (!order.success) return alert(order.message);
+  const rzp = new Razorpay({
+    key: order.keyId, amount: order.order.amount, currency: 'INR',
+    name: 'AI Tukaram Consultancy', order_id: order.order.id,
+    handler: async function(response) {
+      const verify = await api('/api/verify-payment', { method:'POST', body: JSON.stringify({ ...response, saleId: order.saleId }) });
+      if (verify.success) { alert('Payment successful! Invoice: ' + verify.invoiceNumber); loadOverview(); }
+      else alert(verify.message);
+    },
+  });
+  rzp.open();
+}
+
+async function payManual(productCode) {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.accept = 'image/*,.pdf';
+  fileInput.onchange = async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const res = await api('/api/manual-payment', { method:'POST', body: JSON.stringify({
+        productCode, purchaseType:'One-time', proofBase64: reader.result, proofMime: file.type, filename: file.name
+      })});
+      alert(res.success ? 'Payment proof submitted for verification.' : res.message);
+    };
+    reader.readAsDataURL(file);
+  };
+  fileInput.click();
+}
+
+async function loadPurchases() {
+  const { purchases } = await api('/api/client/purchases');
+  $('#purchasesTable tbody').innerHTML = purchases.map(p => `
+    <tr><td>${p.serviceName}</td><td>${p.purchaseType}</td><td>${p.finalAmount||p.amount}</td><td>${p.paymentStatus}</td></tr>`).join('');
+}
+async function loadSubs() {
+  const { subscriptions } = await api('/api/client/subscriptions');
+  $('#subsTable tbody').innerHTML = subscriptions.map(s => `
+    <tr><td>${s.serviceName}</td><td>${s.startDate?new Date(s.startDate).toLocaleDateString():''}</td><td>${s.endDate?new Date(s.endDate).toLocaleDateString():''}</td><td>${s.status}</td></tr>`).join('');
+}
+async function loadInvoices() {
+  const { invoices } = await api('/api/client/invoices');
+  $('#invoicesTable tbody').innerHTML = invoices.map(i => `
+    <tr><td>${i.invoiceNumber}</td><td>${i.serviceName}</td><td>${i.finalAmount||i.amount}</td><td>${i.paymentStatus}</td>
+    <td><a href="/invoice/${i.invoiceNumber}" target="_blank">View</a></td></tr>`).join('');
+}
+async function loadProgress() {
+  const { progress } = await api('/api/client/progress');
+  $('#progressTable tbody').innerHTML = progress.map(p => `<tr><td>${p.projectName}</td><td>${p.stage||''}</td><td>${p.percent||0}%</td></tr>`).join('');
+}
+async function loadMeetings() {
+  const { meetings } = await api('/api/client/meetings');
+  $('#meetingsTable tbody').innerHTML = meetings.map(m => `
+    <tr><td>${m.title}</td><td>${m.date?new Date(m.date).toLocaleString():''}</td><td>${m.link?`<a href="${m.link}" target="_blank">Join</a>`:''}</td><td>${m.status}</td></tr>`).join('');
+}
+async function loadTickets() {
+  const { tickets } = await api('/api/client/tickets');
+  $('#ticketsTable tbody').innerHTML = tickets.map(t => `<tr><td>${t.subject}</td><td>${t.status}</td><td>${t.resolution||'-'}</td></tr>`).join('');
+}
+$('#ticketForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/client/tickets', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  e.target.reset(); loadTickets();
+});
+
+async function loadMaturity() {
+  const { questions } = await api('/api/client/maturity/questions');
+  $('#maturityForm').innerHTML = questions.map(q => `
+    <div style="margin-bottom:10px;"><label>${q.text}</label>
+    <select name="${q.id}"><option value="0">Not at all</option><option value="1">Minimal</option><option value="2">Some</option><option value="3">Moderate</option><option value="4">Strong</option><option value="5">Fully mature</option></select></div>`).join('')
+    + '<button class="btn" type="submit">Submit Assessment</button>';
+  $('#maturityForm').onsubmit = async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const answers = Object.fromEntries(f);
+    const { result } = await api('/api/client/maturity/submit', { method:'POST', body: JSON.stringify({ answers }) });
+    $('#maturityResult').innerHTML = `<h3>Maturity Level: ${result.level}</h3><ul>${result.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+  };
+}
+
+$('#roiForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const { result } = await api('/api/client/roi/calculate', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  const o = result.output;
+  $('#roiResult').innerHTML = `<div class="card">
+    <p>Estimated Annual Savings: â‚¹${o.annualSavings.toFixed(0)}</p>
+    <p>Net First-Year Benefit: â‚¹${o.netFirstYear.toFixed(0)}</p>
+    ${o.roiPct!==null ? `<p>ROI: ${o.roiPct.toFixed(1)}%</p>` : ''}
+    ${o.paybackMonths!==null ? `<p>Payback Period: ${o.paybackMonths.toFixed(1)} months</p>` : ''}
+  </div>`;
+});
+
+async function loadNotifications() {
+  const { notifications } = await api('/api/client/notifications');
+  $('#notifTable tbody').innerHTML = notifications.map(n => `
+    <tr><td>${n.title}</td><td>${n.message}</td><td>${new Date(n.createdAt).toLocaleString()}</td></tr>`).join('');
+}
+
+async function loadProfile() {
+  const { profile } = await api('/api/client/profile');
+  const form = $('#profileForm');
+  ['companyName','fullName','phone','website'].forEach(k => { if (form[k]) form[k].value = profile[k] || ''; });
+}
+$('#profileForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/client/profile', { method:'PUT', body: JSON.stringify(Object.fromEntries(f)) });
+  alert('Profile updated');
+});
+
+loadOverview();
+</script>
+</body>
+</html>
