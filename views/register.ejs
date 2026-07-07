@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Register - AI Tukaram Consultancy</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:30px 0;}
+  .card{background:#fff;padding:36px;border-radius:12px;width:100%;max-width:560px;box-shadow:0 10px 30px rgba(0,0,0,0.2);}
+  h1{font-size:1.4rem;margin-bottom:16px;color:#1e293b;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  label{font-size:0.78rem;color:#334155;display:block;margin:8px 0 4px;}
+  input,select,textarea{width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.9rem;}
+  button{width:100%;margin-top:20px;padding:11px;background:#6366f1;color:#fff;border:none;border-radius:6px;font-size:0.95rem;cursor:pointer;}
+  .alert{margin-top:14px;padding:10px;border-radius:6px;font-size:0.85rem;display:none;}
+  .alert.error{background:#fee2e2;color:#991b1b;display:block;}
+  .alert.success{background:#dcfce7;color:#166534;display:block;}
+  .links{margin-top:14px;text-align:center;font-size:0.85rem;}
+  .links a{color:#6366f1;text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Create Corporate Account</h1>
+  <div id="alert" class="alert"></div>
+  <form id="regForm">
+    <div class="grid">
+      <div><label>Company Name *</label><input id="companyName" required></div>
+      <div><label>Industry</label><input id="industry"></div>
+      <div><label>Company Size</label><input id="companySize" placeholder="e.g. 50-200"></div>
+      <div><label>Website</label><input id="website"></div>
+      <div><label>Full Name *</label><input id="fullName" required></div>
+      <div><label>Designation</label><input id="designation"></div>
+      <div><label>Email *</label><input type="email" id="email" required></div>
+      <div><label>Phone</label><input id="phone"></div>
+      <div><label>Country</label><input id="country"></div>
+      <div><label>City</label><input id="city"></div>
+    </div>
+    <label>Address</label><textarea id="address" rows="2"></textarea>
+    <label>AI Interests</label><textarea id="aiInterests" rows="2"></textarea>
+    <label>Challenges</label><textarea id="challenges" rows="2"></textarea>
+    <div class="grid">
+      <div><label>Password *</label><input type="password" id="password" required></div>
+      <div><label>Confirm Password *</label><input type="password" id="confirmPassword" required></div>
+    </div>
+    <label><input type="checkbox" id="newsletter" style="width:auto;display:inline;"> Subscribe to AI Industry Insights newsletter</label>
+    <button type="submit" id="submitBtn">Create Corporate Account</button>
+  </form>
+  <div class="links"><a href="/login">Already have an account? Sign in</a></div>
+</div>
+<script>
+document.getElementById('regForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const alertBox = document.getElementById('alert');
+  alertBox.style.display='none';
+  if (password.value !== confirmPassword.value){ alertBox.className='alert error'; alertBox.textContent='Passwords do not match'; return; }
+  const btn = document.getElementById('submitBtn'); btn.disabled=true; btn.textContent='Creating account...';
+  const d = {
+    companyName:companyName.value.trim(), industry:industry.value, companySize:companySize.value,
+    website:website.value.trim(), fullName:fullName.value.trim(), designation:designation.value.trim(),
+    email:email.value.trim(), phone:phone.value.trim(), country:country.value.trim(), city:city.value.trim(),
+    address:address.value.trim(), aiInterests:aiInterests.value.trim(), challenges:challenges.value.trim(),
+    password:password.value, newsletter:newsletter.checked
+  };
+  try{
+    const res = await fetch('/api/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)});
+    const data = await res.json();
+    btn.disabled=false; btn.textContent='Create Corporate Account';
+    if (data.success){
+      alertBox.className='alert success'; alertBox.textContent='Account created! Your ID: '+data.userId+'. Redirecting to login...';
+      setTimeout(()=>window.location.href='/login', 2000);
+    } else { alertBox.className='alert error'; alertBox.textContent = data.message; }
+  } catch(err){ btn.disabled=false; btn.textContent='Create Corporate Account'; alertBox.className='alert error'; alertBox.textContent='Network error'; }
+});
+</script>
+</body>
+</html>
