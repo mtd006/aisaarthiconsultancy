@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+  body{background:#f1f5f9;color:#1e293b;}
+  .topbar{background:#1e293b;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;}
+  .topbar a{color:#cbd5e1;text-decoration:none;font-size:0.85rem;}
+  .layout{display:flex;min-height:calc(100vh - 54px);}
+  .sidebar{width:210px;background:#fff;border-right:1px solid #e2e8f0;padding:14px 0;overflow-y:auto;}
+  .sidebar button{display:block;width:100%;text-align:left;padding:10px 20px;background:none;border:none;font-size:0.85rem;cursor:pointer;color:#334155;}
+  .sidebar button.active, .sidebar button:hover{background:#eef2ff;color:#4f46e5;font-weight:600;}
+  .content{flex:1;padding:24px;overflow-x:auto;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;}
+  .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+  .card .num{font-size:1.5rem;font-weight:700;}
+  .card .lbl{font-size:0.78rem;color:#64748b;}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;font-size:0.85rem;}
+  th{background:#1e293b;color:#fff;padding:10px;text-align:left;}
+  td{padding:10px;border-bottom:1px solid #eef2f7;}
+  .panel{display:none;} .panel.active{display:block;}
+  .panel h2{margin-bottom:14px;font-size:1.15rem;}
+  .btn{padding:6px 12px;border:none;border-radius:5px;background:#6366f1;color:#fff;font-size:0.78rem;cursor:pointer;}
+  .btn.red{background:#ef4444;} .btn.green{background:#10b981;} .btn.gray{background:#94a3b8;}
+  form.inline{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;background:#fff;padding:14px;border-radius:8px;}
+  form.inline input, form.inline select{padding:7px;border:1px solid #cbd5e1;border-radius:5px;font-size:0.82rem;}
+  .badge{padding:3px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;}
+  .badge.pending{background:#fef3c7;color:#92400e;} .badge.approved,.badge.verified,.badge.paid{background:#dcfce7;color:#166534;}
+  .badge.rejected,.badge.failed{background:#fee2e2;color:#991b1b;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>Admin Dashboard &bull; <%= user.fullName %></div>
+  <a href="/logout">Logout</a>
+</div>
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <button data-p="overview" class="active">Overview</button>
+    <button data-p="clients">Clients</button>
+    <button data-p="catalog">Product Catalog</button>
+    <button data-p="discounts">Discounts</button>
+    <button data-p="manualpay">Manual Payments</button>
+    <button data-p="invoices">Invoices / Sales</button>
+    <button data-p="consultants">Consultants</button>
+    <button data-p="assignments">Assignments</button>
+    <button data-p="progress">Project Progress</button>
+    <button data-p="meetings">Meetings</button>
+    <button data-p="visits">Onsite Visits</button>
+    <button data-p="tickets">Support Tickets</button>
+    <button data-p="compliance">Compliance</button>
+    <button data-p="settings">Business Settings</button>
+    <button data-p="audit">Audit Log</button>
+  </div>
+  <div class="content">
+
+    <div class="panel active" id="p-overview">
+      <h2>Overview</h2>
+      <div class="cards" id="statCards"></div>
+    </div>
+
+    <div class="panel" id="p-clients">
+      <h2>Clients</h2>
+      <table id="clientsTable"><thead><tr><th>Client ID</th><th>Company</th><th>Email</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-catalog">
+      <h2>Product Catalog</h2>
+      <form class="inline" id="productForm">
+        <input name="name" placeholder="Service name" required>
+        <input name="category" placeholder="Category">
+        <input name="mrp" type="number" placeholder="MRP" required>
+        <input name="priceOneTime" type="number" placeholder="One-time price">
+        <input name="priceSubscription" type="number" placeholder="Subscription price">
+        <button class="btn" type="submit">Add Service</button>
+      </form>
+      <table id="productsTable"><thead><tr><th>Code</th><th>Name</th><th>Category</th><th>MRP</th><th>Active</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-discounts">
+      <h2>Discounts</h2>
+      <form class="inline" id="discountForm">
+        <input name="name" placeholder="Discount name" required>
+        <select name="type"><option value="regular">Regular</option><option value="manual">Manual Payment</option></select>
+        <input name="percentage" type="number" placeholder="Percentage" required>
+        <button class="btn" type="submit">Add Discount</button>
+      </form>
+      <table id="discountsTable"><thead><tr><th>Name</th><th>Type</th><th>%</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-manualpay">
+      <h2>Manual Payment Verification</h2>
+      <table id="manualPayTable"><thead><tr><th>Client</th><th>Service</th><th>Amount</th><th>Proof</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-invoices">
+      <h2>Invoices</h2>
+      <table id="invoicesTable"><thead><tr><th>Invoice #</th><th>Client</th><th>Service</th><th>Amount</th><th>Status</th><th>View</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-consultants">
+      <h2>AI Consultants</h2>
+      <form class="inline" id="consultantForm">
+        <input name="name" placeholder="Name" required>
+        <input name="email" placeholder="Email">
+        <input name="phone" placeholder="Phone">
+        <input name="expertise" placeholder="Expertise">
+        <button class="btn" type="submit">Add Consultant</button>
+      </form>
+      <table id="consultantsTable"><thead><tr><th>Name</th><th>Expertise</th><th>Email</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-assignments">
+      <h2>Project Assignments</h2>
+      <form class="inline" id="assignmentForm">
+        <input name="clientId" placeholder="Client ID" required>
+        <input name="consultantId" placeholder="Consultant ID" required>
+        <input name="projectName" placeholder="Project name" required>
+        <button class="btn" type="submit">Assign</button>
+      </form>
+      <table id="assignmentsTable"><thead><tr><th>Client</th><th>Consultant</th><th>Project</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-progress">
+      <h2>Project Progress</h2>
+      <form class="inline" id="progressForm">
+        <input name="clientId" placeholder="Client ID" required>
+        <input name="projectName" placeholder="Project name" required>
+        <input name="stage" placeholder="Stage">
+        <input name="percent" type="number" placeholder="% complete">
+        <button class="btn" type="submit">Add Update</button>
+      </form>
+      <table id="progressTable"><thead><tr><th>Client</th><th>Project</th><th>Stage</th><th>%</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-meetings">
+      <h2>Meetings</h2>
+      <form class="inline" id="meetingForm">
+        <input name="clientId" placeholder="Client ID" required>
+        <input name="title" placeholder="Title" required>
+        <input name="date" type="datetime-local" required>
+        <input name="link" placeholder="Meeting link">
+        <button class="btn" type="submit">Schedule</button>
+      </form>
+      <table id="meetingsTable"><thead><tr><th>Client</th><th>Title</th><th>Date</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-visits">
+      <h2>Onsite Visits</h2>
+      <table id="visitsTable"><thead><tr><th>Client</th><th>Date</th><th>Address</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-tickets">
+      <h2>Support Tickets</h2>
+      <table id="ticketsTable"><thead><tr><th>Client</th><th>Subject</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-compliance">
+      <h2>Compliance Tracker</h2>
+      <form class="inline" id="complianceForm">
+        <input name="clientId" placeholder="Client ID" required>
+        <select name="framework"><option>GDPR</option><option>EU AI Act</option><option>ISO 42001</option></select>
+        <input name="item" placeholder="Requirement / item" required>
+        <input name="dueDate" type="date">
+        <button class="btn" type="submit">Add</button>
+      </form>
+      <table id="complianceTable"><thead><tr><th>Client</th><th>Framework</th><th>Item</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-settings">
+      <h2>Business Settings / Branding</h2>
+      <form class="inline" id="settingsForm" style="display:block;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label>Business Name</label><input name="businessName"></div>
+          <div><label>Tagline</label><input name="tagline"></div>
+          <div><label>Contact Person</label><input name="contactPerson"></div>
+          <div><label>Contact Number</label><input name="contactNumber"></div>
+          <div><label>Email</label><input name="email"></div>
+          <div><label>Website</label><input name="website"></div>
+          <div><label>GST Number</label><input name="gstNumber"></div>
+          <div><label>Currency Symbol</label><input name="currencySymbol"></div>
+        </div>
+        <label>Address</label><input name="address" style="width:100%;">
+        <button class="btn" type="submit" style="margin-top:10px;">Save Settings</button>
+      </form>
+    </div>
+
+    <div class="panel" id="p-audit">
+      <h2>Audit Log</h2>
+      <table id="auditTable"><thead><tr><th>Time</th><th>User</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+
+$$('.sidebar button').forEach(btn => btn.addEventListener('click', () => {
+  $$('.sidebar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  $$('.panel').forEach(p=>p.classList.remove('active'));
+  $('#p-'+btn.dataset.p).classList.add('active');
+  loadPanel(btn.dataset.p);
+}));
+
+async function api(url, opts={}) {
+  const res = await fetch(url, { headers: {'Content-Type':'application/json'}, ...opts });
+  return res.json();
+}
+
+async function loadPanel(name) {
+  if (name==='overview') return loadOverview();
+  if (name==='clients') return loadClients();
+  if (name==='catalog') return loadCatalog();
+  if (name==='discounts') return loadDiscounts();
+  if (name==='manualpay') return loadManualPay();
+  if (name==='invoices') return loadInvoices();
+  if (name==='consultants') return loadConsultants();
+  if (name==='assignments') return loadAssignments();
+  if (name==='progress') return loadProgress();
+  if (name==='meetings') return loadMeetings();
+  if (name==='visits') return loadVisits();
+  if (name==='tickets') return loadTickets();
+  if (name==='compliance') return loadCompliance();
+  if (name==='settings') return loadSettings();
+  if (name==='audit') return loadAudit();
+}
+
+async function loadOverview() {
+  const { stats } = await api('/api/admin/stats');
+  $('#statCards').innerHTML = `
+    <div class="card"><div class="num">${stats.clients}</div><div class="lbl">Total Clients</div></div>
+    <div class="card"><div class="num">${stats.pending}</div><div class="lbl">Pending Approval</div></div>
+    <div class="card"><div class="num">${stats.sales}</div><div class="lbl">Paid Sales</div></div>
+    <div class="card"><div class="num">â‚¹${stats.revenue.toFixed(0)}</div><div class="lbl">Total Revenue</div></div>
+    <div class="card"><div class="num">${stats.tickets}</div><div class="lbl">Open Tickets</div></div>
+    <div class="card"><div class="num">${stats.manualPending}</div><div class="lbl">Manual Pay Pending</div></div>`;
+}
+
+async function loadClients() {
+  const { clients } = await api('/api/admin/clients');
+  $('#clientsTable tbody').innerHTML = clients.map(c => `
+    <tr><td>${c.clientId||''}</td><td>${c.companyName||''}</td><td>${c.email||''}</td>
+    <td><span class="badge ${c.status}">${c.status}</span></td>
+    <td>${c.status==='pending' ? `<button class="btn green" onclick="approveClient('${c._id}')">Approve</button> <button class="btn red" onclick="rejectClient('${c._id}')">Reject</button>` : ''}</td></tr>`).join('');
+}
+async function approveClient(id){ await api('/api/admin/clients/'+id+'/approve', {method:'POST'}); loadClients(); }
+async function rejectClient(id){ await api('/api/admin/clients/'+id+'/reject', {method:'POST'}); loadClients(); }
+
+async function loadCatalog() {
+  const { products } = await api('/api/admin/products');
+  $('#productsTable tbody').innerHTML = products.map(p => `
+    <tr><td>${p.code}</td><td>${p.name}</td><td>${p.category||''}</td><td>${p.mrp}</td>
+    <td>${p.active?'Yes':'No'}</td>
+    <td><button class="btn gray" onclick="toggleProduct('${p._id}')">Toggle</button> <button class="btn red" onclick="deleteProduct('${p._id}')">Delete</button></td></tr>`).join('');
+}
+$('#productForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/admin/products', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  e.target.reset(); loadCatalog();
+});
+async function toggleProduct(id){ await api('/api/admin/products/'+id+'/toggle', {method:'POST'}); loadCatalog(); }
+async function deleteProduct(id){ await api('/api/admin/products/'+id, {method:'DELETE'}); loadCatalog(); }
+
+async function loadDiscounts() {
+  const { discounts } = await api('/api/admin/discounts');
+  $('#discountsTable tbody').innerHTML = discounts.map(d => `
+    <tr><td>${d.name}</td><td>${d.type}</td><td>${d.percentage}%</td>
+    <td><button class="btn red" onclick="deleteDiscount('${d._id}')">Delete</button></td></tr>`).join('');
+}
+$('#discountForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/admin/discounts', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  e.target.reset(); loadDiscounts();
+});
+async function deleteDiscount(id){ await api('/api/admin/discounts/'+id, {method:'DELETE'}); loadDiscounts(); }
+
+async function loadManualPay() {
+  const { payments } = await api('/api/admin/manual-payments');
+  $('#manualPayTable tbody').innerHTML = payments.map(p => `
+    <tr><td>${p.clientId}</td><td>${p.serviceName}</td><td>${p.amount}</td>
+    <td>${p.proofBase64 ? `<a href="${p.proofBase64}" target="_blank">View</a>` : '-'}</td>
+    <td><span class="badge ${p.status.toLowerCase()}">${p.status}</span></td>
+    <td>${p.status==='Pending' ? `<button class="btn green" onclick="verifyPay('${p._id}','Verified')">Verify</button> <button class="btn red" onclick="verifyPay('${p._id}','Rejected')">Reject</button>` : ''}</td></tr>`).join('');
+}
+async function verifyPay(id, status){
+  const remark = status==='Rejected' ? (prompt('Reason for rejection:')||'') : '';
+  await api('/api/admin/manual-payments/'+id+'/verify', { method:'POST', body: JSON.stringify({ status, remark }) });
+  loadManualPay();
+}
+
+async function loadInvoices() {
+  const { invoices } = await api('/api/admin/invoices');
+  $('#invoicesTable tbody').innerHTML = invoices.map(i => `
+    <tr><td>${i.invoiceNumber}</td><td>${i.clientId||''}</td><td>${i.serviceName||''}</td><td>${i.finalAmount||i.amount||0}</td>
+    <td><span class="badge ${(i.paymentStatus||'').toLowerCase()}">${i.paymentStatus}</span></td>
+    <td><a href="/invoice/${i.invoiceNumber}" target="_blank">View</a></td></tr>`).join('');
+}
+
+async function loadConsultants() {
+  const { consultants } = await api('/api/admin/consultants');
+  $('#consultantsTable tbody').innerHTML = consultants.map(c => `
+    <tr><td>${c.name}</td><td>${c.expertise||''}</td><td>${c.email||''}</td>
+    <td><button class="btn red" onclick="deleteConsultant('${c._id}')">Delete</button></td></tr>`).join('');
+}
+$('#consultantForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/admin/consultants', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  e.target.reset(); loadConsultants();
+});
+async function deleteConsultant(id){ await api('/api/admin/consultants/'+id, {method:'DELETE'}); loadConsultants(); }
+
+async function loadAssignments() {
+  const { assignments } = await api('/api/admin/assignments');
+  $('#assignmentsTable tbody').innerHTML = assignments.map(a => `
+    <tr><td>${a.clientId}</td><td>${a.consultantId}</td><td>${a.projectName}</td><td>${a.status}</td></tr>`).join('');
+}
+$('#assignmentForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/admin/assignments', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  e.target.reset(); loadAssignments();
+});
+
+async function loadProgress() {
+  const { progress } = await api('/api/admin/progress');
+  $('#progressTable tbody').innerHTML = progress.map(p => `
+    <tr><td>${p.clientId}</td><td>${p.projectName}</td><td>${p.stage||''}</td><td>${p.percent||0}%</td></tr>`).join('');
+}
+$('#progressForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/admin/progress', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  e.target.reset(); loadProgress();
+});
+
+async function loadMeetings() {
+  const { meetings } = await api('/api/admin/meetings');
+  $('#meetingsTable tbody').innerHTML = meetings.map(m => `
+    <tr><td>${m.clientId}</td><td>${m.title}</td><td>${m.date ? new Date(m.date).toLocaleString() : ''}</td><td>${m.status}</td></tr>`).join('');
+}
+$('#meetingForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/admin/meetings', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  e.target.reset(); loadMeetings();
+});
+
+async function loadVisits() {
+  const { visits } = await api('/api/admin/visits');
+  $('#visitsTable tbody').innerHTML = visits.map(v => `
+    <tr><td>${v.clientId}</td><td>${v.date ? new Date(v.date).toLocaleDateString() : ''}</td><td>${v.address||''}</td>
+    <td><span class="badge">${v.status}</span></td>
+    <td><button class="btn green" onclick="setVisitStatus('${v._id}','Confirmed')">Confirm</button></td></tr>`).join('');
+}
+async function setVisitStatus(id, status){ await api('/api/admin/visits/'+id, { method:'PUT', body: JSON.stringify({status}) }); loadVisits(); }
+
+async function loadTickets() {
+  const { tickets } = await api('/api/admin/tickets');
+  $('#ticketsTable tbody').innerHTML = tickets.map(t => `
+    <tr><td>${t.clientId}</td><td>${t.subject}</td><td>${t.status}</td>
+    <td>${t.status!=='Resolved' ? `<button class="btn green" onclick="resolveTicket('${t._id}')">Resolve</button>` : ''}</td></tr>`).join('');
+}
+async function resolveTicket(id){
+  const resolution = prompt('Resolution notes:'); if (resolution===null) return;
+  await api('/api/admin/tickets/'+id+'/resolve', { method:'POST', body: JSON.stringify({ resolution, assignedTo: 'Admin' }) });
+  loadTickets();
+}
+
+async function loadCompliance() {
+  const { items } = await api('/api/admin/compliance');
+  $('#complianceTable tbody').innerHTML = items.map(c => `
+    <tr><td>${c.clientId}</td><td>${c.framework}</td><td>${c.item}</td><td>${c.status}</td></tr>`).join('');
+}
+$('#complianceForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/admin/compliance', { method:'POST', body: JSON.stringify(Object.fromEntries(f)) });
+  e.target.reset(); loadCompliance();
+});
+
+async function loadSettings() {
+  const { settings } = await api('/api/admin/settings');
+  const form = $('#settingsForm');
+  Object.keys(settings.toObject ? settings.toObject() : settings).forEach(k => {
+    if (form[k]) form[k].value = settings[k] || '';
+  });
+}
+$('#settingsForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await api('/api/admin/settings', { method:'PUT', body: JSON.stringify(Object.fromEntries(f)) });
+  alert('Settings saved');
+});
+
+async function loadAudit() {
+  const { logs } = await api('/api/admin/audit-log');
+  $('#auditTable tbody').innerHTML = logs.map(l => `
+    <tr><td>${new Date(l.createdAt).toLocaleString()}</td><td>${l.userId}</td><td>${l.action}</td></tr>`).join('');
+}
+
+loadOverview();
+</script>
+</body>
+</html>
