@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= business.businessName || 'AI Tukaram Consultancy' %></title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+  body{background:#f8fafc;color:#1e293b;}
+  header{background:linear-gradient(135deg,<%= business.primaryColor||'#6366f1' %>,<%= business.secondaryColor||'#8b5cf6' %>);color:#fff;padding:18px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  header .brand{display:flex;align-items:center;gap:10px;}
+  header .brand img{height:40px;border-radius:6px;background:#fff;}
+  header h2{font-size:1.2rem;}
+  header nav a{color:#fff;text-decoration:none;margin-left:16px;font-size:0.9rem;background:rgba(255,255,255,0.15);padding:8px 14px;border-radius:6px;}
+  .hero{text-align:center;padding:50px 20px;}
+  .hero h1{font-size:2rem;margin-bottom:10px;}
+  .hero p{color:#64748b;max-width:600px;margin:0 auto;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;padding:30px;max-width:1200px;margin:0 auto;}
+  .product{background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+  .product h3{font-size:1.05rem;margin-bottom:6px;}
+  .product .cat{font-size:0.75rem;color:<%= business.accentColor||'#06b6d4' %>;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+  .product p{font-size:0.88rem;color:#475569;margin-bottom:14px;line-height:1.5;}
+  .price{font-size:1.3rem;font-weight:700;color:#1e293b;margin-bottom:14px;}
+  .price small{font-size:0.75rem;color:#94a3b8;font-weight:400;}
+  .product a{display:block;text-align:center;padding:10px;background:<%= business.primaryColor||'#6366f1' %>;color:#fff;border-radius:6px;text-decoration:none;font-size:0.9rem;}
+  footer{text-align:center;padding:24px;color:#94a3b8;font-size:0.8rem;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <% if (business.logoBase64) { %><img src="<%= business.logoBase64 %>" alt="logo"><% } %>
+    <h2><%= business.businessName || 'AI Tukaram Consultancy' %></h2>
+  </div>
+  <nav>
+    <% if (user) { %>
+      <a href="<%= user.role === 'admin' ? '/admin' : '/client' %>">Dashboard</a>
+      <a href="/logout">Logout</a>
+    <% } else { %>
+      <a href="/login">Login</a>
+      <a href="/register">Register</a>
+    <% } %>
+  </nav>
+</header>
+
+<div class="hero">
+  <h1><%= business.tagline || 'Empowering Corporates with World-Class AI Solutions' %></h1>
+  <p>Browse our AI consulting services below. Sign in to purchase, track projects, and access your dashboard.</p>
+</div>
+
+<div class="grid">
+  <% products.forEach(function(p){ %>
+    <div class="product">
+      <div class="cat"><%= p.category || 'AI Services' %></div>
+      <h3><%= p.name %></h3>
+      <p><%= p.description || '' %></p>
+      <div class="price"><%= business.currencySymbol || 'â‚¹' %><%= p.priceOneTime || p.mrp %> <small>one-time</small></div>
+      <a href="<%= user ? '/client' : '/login' %>">Get Started</a>
+    </div>
+  <% }); %>
+  <% if (!products.length) { %>
+    <p style="grid-column:1/-1;text-align:center;color:#94a3b8;">No services published yet. Check back soon.</p>
+  <% } %>
+</div>
+
+<footer>A Product of Tukaram Consultancy &bull; <%= business.businessName || '' %></footer>
+</body>
+</html>
